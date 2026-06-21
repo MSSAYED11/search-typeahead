@@ -1,10 +1,3 @@
-Here is the complete, final `README.md` for your project. It perfectly reflects the Docker-based Redis cluster, the 100,000+ generated dataset, the consistent hashing architecture, and the batch writing logic you implemented.
-
-You can copy and paste this directly into a `README.md` file in your project folder.
-
----
-
-```markdown
 # Distributed Search Typeahead System
 
 A high-performance, distributed backend for a search typeahead system built with Node.js, Express, and Redis. This project implements distributed caching via consistent hashing, asynchronous batch database writes to protect primary data stores, and a custom recency-based trending search algorithm.
@@ -26,9 +19,6 @@ A high-performance, distributed backend for a search typeahead system built with
 Clone the repository and install the backend dependencies:
 ```bash
 npm install
-
-```
-
 ### 3. Boot the Redis Cluster
 
 Spin up the 3 independent Redis cache nodes using Docker:
