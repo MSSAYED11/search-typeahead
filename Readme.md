@@ -114,10 +114,17 @@ Once the terminal logs `Connected to Docker Redis Node_A` (and B, C), open `inde
 * **Write Load Reduction:** Asynchronous batching reduces potential synchronous database writes by up to 99% under peak load, collapsing thousands of identical requests per second into a single atomic update every 10 seconds.
 * **Network Efficiency:** Frontend debouncing and character thresholds eliminate over 60% of unnecessary HTTP requests for partial strings.
 
+
+## ⚖️ Design Choices & Trade-offs
+1. **Consistent Hashing vs. Standard Modulo Hashing:** Standard modulo hashing is fragile; adding or removing a cache node changes the routing for almost every key. Consistent Hashing preserves the vast majority of the cache during scaling.
+2. **Batch Writes vs. Synchronous DB Writes (The Trade-off):** We traded strict immediate consistency for high availability. Batching writes every 10 seconds prevents the database from crashing under peak load. **Trade-off:** If the server crashes before a flush, up to 10 seconds of search logs are lost. For search analytics, this is an acceptable business risk.
+3. **Recency-Aware Ranking:** Sorting solely by historical frequency hides new trends. We use a blended score `(totalCount + (recentCount * 5))` to prioritize live trends, paired with a 10% hourly decay to let old trends cool off.
+
 ## Video-Demo
 
+https://github.com/user-attachments/assets/d1997e14-3d26-45b9-af78-4f2f54650936
 
-https://github.com/user-attachments/assets/8789ee68-50e0-4250-a046-984e05c45ee6
+
 
 
 
