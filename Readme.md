@@ -122,7 +122,8 @@ Once the terminal logs `Connected to Docker Redis Node_A` (and B, C), open `inde
 
 ## Video-Demo
 
-https://github.com/user-attachments/assets/d1997e14-3d26-45b9-af78-4f2f54650936
+
+https://github.com/user-attachments/assets/65bf039f-6da8-4ea7-b4d2-409a532651ec
 
 
 
