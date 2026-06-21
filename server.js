@@ -140,5 +140,19 @@ app.get('/cache/debug', async (req, res) => {
     });
 });
 
+// GET /trending - Returns global top 5 trending searches for the UI
+app.get('/trending', (req, res) => {
+    const globalTrends = Object.keys(db)
+        .map(query => ({
+            query,
+            score: db[query].totalCount + (db[query].recentCount * 5) // Same recency math
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(item => item.query);
+
+    res.json(globalTrends);
+});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Typeahead Service running on http://localhost:${PORT}`));
