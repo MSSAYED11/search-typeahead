@@ -1,0 +1,8 @@
+[
+  { "query": "iphone", "count": 100000 },
+  { "query": "iphone 15", "count": 85000 },
+  { "query": "iphone charger", "count": 60000 },
+  { "query": "java tutorial", "count": 40000 },
+  { "query": "javascript crash course", "count": 35000 },
+  { "query": "java virtual machine", "count": 20000 }
+]

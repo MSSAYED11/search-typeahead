@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typeahead System</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --primary: #3b82f6;
+            --hover: #334155;
+            --border: #475569;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 100px;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .header { margin-bottom: 30px; text-align: center; }
+        .header h2 { margin: 0; font-weight: 600; letter-spacing: -0.5px; }
+        .header p { color: #94a3b8; font-size: 0.9rem; margin-top: 8px; }
+
+        .search-wrapper { position: relative; width: 100%; max-width: 550px; }
+        
+        .search-input {
+            width: 100%;
+            padding: 18px 48px 18px 24px;
+            font-size: 1.1rem;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--surface);
+            color: var(--text);
+            outline: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        .spinner {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        .suggestions-panel {
+            position: absolute;
+            top: calc(100% + 12px);
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 10;
+        }
+
+        .suggestion-item {
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: background 0.1s;
+            display: flex;
+            align-items: center;
+        }
+
+        .suggestion-item.active, .suggestion-item:hover {
+            background: var(--hover);
+        }
+
+        .search-icon { margin-right: 12px; opacity: 0.5; font-size: 0.9rem; }
+
+        .status-log {
+            margin-top: 30px;
+            font-family: 'Fira Code', monospace;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.05);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 550px;
+            display: none;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Global Search</h2>
+        <p>Type at least 3 characters to load suggestions</p>
+    </div>
+
+    <div class="search-wrapper">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search products, tutorials, brands..." autocomplete="off">
+        <div class="spinner" id="spinner"></div>
+        <div class="suggestions-panel" id="suggestionsBox"></div>
+    </div>
+    
+    <div class="status-log" id="statusBox"></div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+        const spinner = document.getElementById('spinner');
+        const statusBox = document.getElementById('statusBox');
+        
+        let debounceTimer;
+        let currentSuggestions = [];
+        let activeIndex = -1;
+
+        // Fetch suggestions from Backend
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            const prefix = e.target.value.trim();
+            activeIndex = -1; // Reset keyboard navigation index
+
+            if (prefix.length < 3) {
+                suggestionsBox.style.display = 'none';
+                spinner.style.display = 'none';
+                return;
+            }
+
+            spinner.style.display = 'block';
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`http://localhost:3000/suggest?q=${encodeURIComponent(prefix)}`);
+                    const data = await res.json();
+                    currentSuggestions = data;
+                    
+                    if (data.length > 0) {
+                        renderSuggestions();
+                        suggestionsBox.style.display = 'block';
+                    } else {
+                        suggestionsBox.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error("Backend unreachable", error);
+                } finally {
+                    spinner.style.display = 'none';
+                }
+            }, 300); // 300ms Debounce
+        });
+
+        function renderSuggestions() {
+            suggestionsBox.innerHTML = currentSuggestions.map((item, index) => 
+                `<div class="suggestion-item ${index === activeIndex ? 'active' : ''}" 
+                      onclick="submitSearch('${item}')"
+                      data-index="${index}">
+                      <span class="search-icon">🔍</span> ${item}
+                </div>`
+            ).join('');
+        }
+
+        // Keyboard Navigation (Up/Down/Enter)
+        searchInput.addEventListener('keydown', (e) => {
+            if (currentSuggestions.length === 0 || suggestionsBox.style.display === 'none') {
+                if (e.key === 'Enter' && searchInput.value.trim()) {
+                    submitSearch(searchInput.value.trim());
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = activeIndex < currentSuggestions.length - 1 ? activeIndex + 1 : 0;
+                renderSuggestions();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = activeIndex > 0 ? activeIndex - 1 : currentSuggestions.length - 1;
+                renderSuggestions();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const selectedQuery = activeIndex >= 0 ? currentSuggestions[activeIndex] : searchInput.value.trim();
+                if (selectedQuery) submitSearch(selectedQuery);
+            }
+        });
+
+        // Submit Search Handler
+        async function submitSearch(query) {
+            searchInput.value = query;
+            suggestionsBox.style.display = 'none';
+            currentSuggestions = [];
+            activeIndex = -1;
+            
+            try {
+                const res = await fetch('http://localhost:3000/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                statusBox.style.display = 'block';
+                statusBox.innerHTML = `> SEARCH EXECUTED: "${query}"<br>> Batch buffer updated. Flush pending...`;
+                
+                setTimeout(() => { 
+                    statusBox.style.display = 'none'; 
+                    searchInput.value = ''; 
+                }, 4000);
+            } catch (error) {
+                console.error("Failed to log search", error);
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-wrapper')) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
