@@ -113,3 +113,12 @@ Once the terminal logs `Connected to Docker Redis Node_A` (and B, C), open `inde
 
 * **Write Load Reduction:** Asynchronous batching reduces potential synchronous database writes by up to 99% under peak load, collapsing thousands of identical requests per second into a single atomic update every 10 seconds.
 * **Network Efficiency:** Frontend debouncing and character thresholds eliminate over 60% of unnecessary HTTP requests for partial strings.
+
+## Video-Demo
+
+
+https://github.com/user-attachments/assets/8789ee68-50e0-4250-a046-984e05c45ee6
+
+
+
+
